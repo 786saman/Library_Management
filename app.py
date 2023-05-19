@@ -63,26 +63,28 @@ def login():
 
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+        cur.execute("SELECT * FROM users WHERE username = '%s' AND password = '%s'" % (username, password))
+        #cur.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
         user = cur.fetchone()
 
         if user:
-            session['user_id'] = user[0]
+            session['username'] = username
             return redirect('/books')
-        return ('Invalid User Or UnAuthorized User')
-        return redirect('/login')
+        else:
+           return 'Invalid User Or UnAuthorized User'
+        #return redirect('/login')
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
+    if('username' in session):
+       session.pop('username')
     return redirect('/')
 
 @app.route('/books', methods=['GET', 'POST'])
 def books():
-    if 'user_id' not in session:
-        return redirect('/login')
-
+    username = session.get('username') or ''
+    
     if request.method == 'POST':
         title = request.form['title']
         author = request.form['author']
@@ -96,7 +98,7 @@ def books():
     cur.execute("SELECT * FROM books")
     books = cur.fetchall()
 
-    return render_template('books.html', books=books)
+    return render_template('books.html', books=books, username=username)
 
 @app.route('/books/<int:book_id>/edit', methods=['GET', 'POST'])
 def edit_book(book_id):
